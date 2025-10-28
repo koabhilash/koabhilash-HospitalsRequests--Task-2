@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Hospital Post</title>
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #ff4d4d, #008080);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: #fff;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      padding: 30px 40px;
+      transition: 0.3s ease;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+      font-weight: 600;
+    }
+    .input-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #444;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: 0.3s;
+    }
+    input:focus, textarea:focus {
+      border-color: #008080;
+      box-shadow: 0 0 5px rgba(0, 128, 128, 0.3);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #008080;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+    button:hover { background: #006666; }
+    .message {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+      color: red;
+    }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Post Requirement and Information</h2>
+    <form id="postForm">
+      <div class="input-group">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" required>
+      </div>
+      <div class="input-group">
+        <label for="content">Content</label>
+        <textarea id="content" name="content" required></textarea>
+      </div>
+      <button type="submit">Post Requirement</button>
+      <div class="message" id="message"></div>
+    </form>
+  </div>
+
+  <script>
+    const postForm = document.getElementById("postForm");
+    const message = document.getElementById("message");
+
+    postForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      message.textContent = "";
+
+      const title = document.getElementById("title").value.trim();
+      const content = document.getElementById("content").value.trim();
+
+      if (title.length < 5) {
+        message.textContent = "Title should be at least 5 characters long.";
+        return;
+      }
+      if (content.length < 20) {
+        message.textContent = "Please provide more details in the content.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", content);
+
+      const response = await fetch("post.php", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+      if (data.status === "error") {
+        message.textContent = data.message;
+      } else {
+        message.textContent = data.message;
+        message.classList.add("success");
+
+        // ✅ Redirect to dashboard after 1.5 seconds
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 1500);
+      }
+    });
+  </script>
+</body>
+</html>

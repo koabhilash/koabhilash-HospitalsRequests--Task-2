@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hospital Dashboard - Posts</title>
+  <style>
+    * {
+      margin: 0; padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #ff4d4d, #008080);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      padding: 30px;
+      position: relative;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+    .greeting {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+    .post-btn {
+      background: #28a745;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+    .post-btn:hover { background: #218838; }
+
+    .posts {
+      display: grid;
+      gap: 20px;
+    }
+    .card {
+      border: 1px solid #e6e6e6;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+      transition: 0.3s;
+      position: relative;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+    .card h3 {
+      color: #008080;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    .card p {
+      color: #555;
+      line-height: 1.5;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .card .date {
+      text-align: right;
+      font-size: 13px;
+      color: #777;
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .edit-btn, .delete-btn {
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #fff;
+      transition: 0.3s;
+    }
+    .edit-btn { background: #007bff; }
+    .edit-btn:hover { background: #0056b3; }
+    .delete-btn { background: #dc3545; }
+    .delete-btn:hover { background: #b02a37; }
+
+    .no-posts {
+      text-align: center;
+      padding: 60px 0;
+      color: #333;
+    }
+    .no-posts h3 {
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    .no-posts button {
+      background: #28a745;
+      color: #fff;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .no-posts button:hover { background: #218838; }
+
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      width: 400px;
+      max-width: 90%;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    .modal-content h3 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+    .modal-content input, .modal-content textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .modal-content button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .save-btn { background: #007bff; color: #fff; margin-right: 8px; }
+    .close-btn { background: #ccc; color: #000; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <div class="greeting" id="greetingText">Hello, User!</div>
+      <button class="post-btn" onclick="window.location.href='post.html'">+ Add Post</button>
+    </div>
+    <h2>Recent Posts</h2>
+    <div id="postsContainer" class="posts"></div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <h3>Edit Post</h3>
+      <input type="text" id="editTitle" placeholder="Title" />
+      <textarea id="editContent" placeholder="Content"></textarea>
+      <div>
+        <button class="save-btn" id="saveEdit">Save</button>
+        <button class="close-btn" id="closeModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentEditId = null;
+
+    async function loadUsername() {
+      try {
+        const res = await fetch("get_username.php");
+        const data = await res.json();
+        if (data.username) document.getElementById("greetingText").textContent = `Hello, ${data.username}!`;
+      } catch {
+        document.getElementById("greetingText").textContent = "Hello!";
+      }
+    }
+
+    async function loadPosts() {
+      const container = document.getElementById("postsContainer");
+      container.innerHTML = "<p>Loading posts...</p>";
+
+      try {
+        const res = await fetch("fetch_posts.php");
+        const data = await res.json();
+
+        if (data.length === 0) {
+          container.innerHTML = `
+            <div class="no-posts">
+              <h3>No posts yet!</h3>
+              <p>Be the first to post a blood or organ requirement.</p>
+              <button onclick="window.location.href='post.html'">Post Now</button>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = "";
+        data.forEach(post => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <h3>${post.title}</h3>
+            <p>${post.content}</p>
+            <div class="date">Posted on ${post.created_at}</div>
+            <div class="action-btns">
+              <button class="edit-btn" onclick="openEditModal(${post.id}, '${post.title}', '${post.content.replace(/'/g, "\\'")}')">Edit</button>
+              <button class="delete-btn" onclick="deletePost(${post.id})">Delete</button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch {
+        container.innerHTML = "<p>Error loading posts.</p>";
+      }
+    }
+
+    function openEditModal(id, title, content) {
+      currentEditId = id;
+      document.getElementById("editTitle").value = title;
+      document.getElementById("editContent").value = content;
+      document.getElementById("editModal").style.display = "flex";
+    }
+
+    document.getElementById("closeModal").onclick = () => {
+      document.getElementById("editModal").style.display = "none";
+    };
+
+    document.getElementById("saveEdit").onclick = async () => {
+      const title = document.getElementById("editTitle").value.trim();
+      const content = document.getElementById("editContent").value.trim();
+      if (!title || !content) return alert("Please fill all fields.");
+
+      const formData = new FormData();
+      formData.append("id", currentEditId);
+      formData.append("title", title);
+      formData.append("content", content);
+
+      const res = await fetch("update_post.php", { method: "POST", body: formData });
+      const data = await res.json();
+      alert(data.message);
+      document.getElementById("editModal").style.display = "none";
+      loadPosts();
+    };
+
+    async function deletePost(id) {
+      if (!confirm("Are you sure you want to delete this post?")) return;
+
+      const formData = new FormData();
+      formData.append("id", id);
+
+      const res = await fetch("delete_post.php", { method: "POST", body: formData });
+      const data = await res.json();
+      alert(data.message);
+      loadPosts();
+    }
+
+    loadUsername();
+    loadPosts();
+  </script>
+</body>
+</html>
+
+
+Steps:
+1. Search Functionality :
+. Add a search form to allow users to search posts by title or content.
+. Implement PHP code to perform the search query and display results.
+2. Pagination :
+. Implement pagination for the posts listing page.
+· Ensure the page displays a limited number of posts per page with navigation links to other pages.
+3. User Interface Improvements :
+· Use CSS to style the application for better UX.
+· Optionally, integrate a front-end framework like Bootstrap for responsive design.
